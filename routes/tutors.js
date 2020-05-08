@@ -92,4 +92,101 @@ router.post('/login', (req, res, next) => {
     )
 })
 
+/********** VERIFY JWTs **********/
+const verifyjwt = function(token){
+    var result
+    if ( token ) {
+        jwt.verify(token, "mysecretkey", err => {
+            if ( err ) {
+                result = ({
+                    status: false,
+                    message: "Invalid token"
+                })
+            } else {
+                result = ({
+                    status: true
+                })
+            }
+        })
+    } else {
+        result = {
+            status: false,
+            message: "No token provided"
+        }
+    }
+
+    return result
+}
+
+/**********  **********/
+
+// REGISTER TO TAKE A SUBJECT
+router.patch('/add-subject/:userId', async (req, res) => {
+    var token = req.headers['access-token']
+    let verify = verifyjwt(token)
+    const id = req.params.userId
+    if ( verify.status != false ) {
+        const sub = new Tutor({
+            subjects: req.body.subject,
+        })
+
+        if ( !req.body.subject ) {
+            res.status(400).send({
+                status: false,
+                message: "All fields are required"
+            })
+            return
+        }
+
+        try {
+            const tutor = await Tutor.findOne({_id: id})
+            if ( !tutor ) {
+                return res.send({
+                    status: false,
+                    message: "Tutor not found"
+                })
+            }
+        }catch(err){
+            console.log(err)
+        }
+        
+        Subject.findOne({name: sub.subjects}).then(
+            data => {
+                if ( !data ) {
+                    return res.status(423).send({
+                        status: false,
+                        message: "Subject is not available for tutoring"
+                    })
+                }
+    
+                try {
+                    sub.updateOne(
+                        {_id: id},
+                        {$push: {subjects: [sub.subjects]}}
+                    )
+                } catch (err) {
+                    console.log(err)
+                }
+                
+                res.status(200).send({
+                    status: true,
+                    message: "Subject created successfully"
+                })
+            }
+        ).catch(err => console.log(err))
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
+
+// VIEW ALL YOUR REGISTERED SUBJECTS
+
+
+// UPDATE A REGISTERED SUBJECT
+
+
+// DELETE A REGISTERD SUBJECT
+
 module.exports = router
