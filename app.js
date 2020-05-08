@@ -12,7 +12,7 @@ const adminRoutes = require("./routes/admin");
 mongoose.connect(process.env.DB_CONN, { useNewUrlParser: true, useUnifiedTopology: true }).then(
     result => {
         console.log("Database connected");
-        app.listen(3000);
+        // app.listen(3000);
     }
 ).catch(
     err => console.log(err)
