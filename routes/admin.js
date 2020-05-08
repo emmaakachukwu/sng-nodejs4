@@ -316,28 +316,28 @@ router.post('/create-category', async (req, res) => {
 })
 
 // GET CATEGORIES
-router.get('/categories/:id', async (req, res) => {
-    var token = req.headers['access-token']
-    let verify = verifyjwt(token)
+// router.get('/categories/:id', async (req, res) => {
+//     var token = req.headers['access-token']
+//     let verify = verifyjwt(token)
 
-    const id = req.params.id
+//     const id = req.params.id
 
-    if ( verify.status != false ) {
-        try {
-            const cats = await Admin.find({_id: id}).populate("Subject")
-            res.status(200).send({
-                status: true,
-                message: cats
-            })
-        } catch( err ) {
-            console.log(err)
-        }
-    } else {
-        res.send({
-            verify
-        })
-    }
-})
+//     if ( verify.status != false ) {
+//         try {
+//             const cats = await Admin.find({_id: id}).populate("Subject")
+//             res.status(200).send({
+//                 status: true,
+//                 message: cats
+//             })
+//         } catch( err ) {
+//             console.log(err)
+//         }
+//     } else {
+//         res.send({
+//             verify
+//         })
+//     }
+// })
 
 // UPDATE CATEGORY
 router.patch('/update-category', async (req, res) => {

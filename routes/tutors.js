@@ -187,6 +187,6 @@ router.patch('/add-subject/:userId', async (req, res) => {
 // UPDATE A REGISTERED SUBJECT
 
 
-// DELETE A REGISTERD SUBJECT
+// DELETE A REGISTERED SUBJECT
 
 module.exports = router
