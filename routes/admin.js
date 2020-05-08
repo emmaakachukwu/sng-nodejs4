@@ -32,7 +32,7 @@ router.post('/login', (req, res) => {
                     const token = jwt.sign({
                         email: user.email,
                         _id: user._id
-                    }, "mysecretkey", { expiresIn: "1hr"});
+                    }, "mysecretkey", { expiresIn: "24hr"});
                     res.status(200).send({
                         _id: user._id,
                         token
@@ -68,35 +68,28 @@ const verifyjwt = function(token){
     return result
 }
 
-// CREATE SUBJECTS (ADMIN ONLY)
+/*********** SUBJECTS **********/
+
+// CREATE SUBJECT (ADMIN ONLY)
 router.post('/create-subject', (req, res) => {
     var token = req.headers['access-token']
     let verify = verifyjwt(token)
     if ( verify.status != false ) {
-        
         const subject = new Subject({
             name: req.body.name,
             category: req.body.category
         })
         const name = subject.name
         const category = subject.category
-        console.log(subject)
-        categories = ['primary', 'JSS', 'SSS']
 
-        if ( !name ) {
+        if ( !name || !category ) {
             res.status(400).send({
                 status: false,
                 message: "All fields are required"
             })
             return
-        } else if ( !categories.includes(category) ) {
-            res.send({
-                status: false,
-                message: "Category not available. Choose from: primary, JSS and SSS"
-            })
-            return
         }
-    
+        
         Subject.findOne({name, category}).then(
             sub => {
                 if ( sub ) {
@@ -130,7 +123,6 @@ router.patch('/update-subject/:id', async (req, res) => {
     const id = req.params.id
     const name = req.body.name
     const category = req.body.category
-    const categories = ['primary', 'JSS', 'SSS']
 
     if ( verify.status != false ) {
         if ( !name || !category ) {
@@ -138,14 +130,19 @@ router.patch('/update-subject/:id', async (req, res) => {
                 status: false,
                 message: "All fields are required"
             })
-        } else if ( !categories.includes(category) ) {
-            res.send({
-                status: false,
-                message: "Category not available. Choose from: primary, JSS and SSS"
-            })
-            return
         }
-    
+
+        const a = Subject.findOne({_id: id}).then(
+            r => {
+                if ( !r ) {
+                    return res.send({
+                        status: false,
+                        message: "Subject with ID: " + id + " not found"
+                    })
+                }
+            }
+        )
+
         Subject.findOne({name, category}).then(
             sub => {
                 if ( sub ) {
@@ -200,6 +197,8 @@ router.delete('/delete-subject/:id', async (req, res) => {
         })
     }
 })
+
+/*********** TUTORS **********/
 
 // RETRIEVE ALL TUTORS
 router.get('/tutors', async (req, res) => {
@@ -274,6 +273,8 @@ router.patch('/tutors/:id', async (req, res) => {
     }
 })
 
+/*********** CATEGORIES **********/
+
 // ADD CATEGORIES
 router.post('/create-category', async (req, res) => {
     var token = req.headers['access-token']
@@ -281,7 +282,6 @@ router.post('/create-category', async (req, res) => {
 
     const category = new Category({
         name: req.body.name,
-        category: req.body.category
     })
 
     if ( verify.status != false ) {
@@ -291,6 +291,14 @@ router.post('/create-category', async (req, res) => {
                 message: "All fields are required"
             })
         }
+        const checkCategory = await Category.findOne({name: category.name})
+        if ( checkCategory ) {
+            return res.send({
+                status: false,
+                message: "Category already added"
+            })
+        }
+
         try {
             await category.save()
             res.status(200).send({
@@ -330,6 +338,108 @@ router.get('/categories/:id', async (req, res) => {
         })
     }
 })
+
+// UPDATE CATEGORY
+router.patch('/update-category', async (req, res) => {
+    var token = req.headers['access-token']
+    let verify = verifyjwt(token)
+
+    const name = req.body.name
+    const new_name = req.body.new_name
+
+    if ( verify.status != false ) {
+        if ( !name || !new_name ) {
+            return res.send({
+                status: false,
+                message: "All fields are required"
+            })
+        }
+
+        try {
+            checkCategoryName = await Category.findOne({name})
+            if ( !checkCategoryName ) {
+                return res.send({
+                    status: false,
+                    message: "Category: " + name + " not found"
+                })
+            }
+
+            await Category.updateOne(
+                {name: name},
+                {$set: { name: new_name }}
+            )
+            res.status(200).send({
+                status: true,
+                message: "Category has been updated successfully"
+            })
+        } catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
+
+// DELETE CATEGORY
+router.delete('/delete-category', async (req, res) => {
+    var token = req.headers['access-token']
+    let verify = verifyjwt(token)
+
+    const name = req.body.name
+
+    if ( verify.status != false ) {
+        if ( !name ) {
+            return res.send({
+                status: false,
+                message: "All fields are required"
+            })
+        }
+
+        try {
+            checkCategoryName = await Category.findOne({name})
+            if ( !checkCategoryName ) {
+                return res.send({
+                    status: false,
+                    message: "Category: " + name + " not found"
+                })
+            }
+
+            await Category.deleteOne({name: name})
+            Subject.schema.pre('deleteMany', next => {
+                this.model('Subject').deleteMany({category: this._id}, next)
+            })
+
+            res.status(200).send({
+                status: true,
+                message: "Category has been deleted successfully"
+            })
+        } catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
+
+/*********** LESSONS **********/
+
+// BOOK LESSONS
+
+
+// RETRIEVE LESSONS
+
+
+// GET A LESSON BY ID
+
+
+// UPDATE A LESSON BY ID
+
+
+// DELETE A LESSON BY ID
 
 
 module.exports = router

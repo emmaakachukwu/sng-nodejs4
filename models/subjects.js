@@ -10,12 +10,7 @@ const subjectSchema = new Schema({
     category: {
         type: Schema.Types.ObjectId,
         ref: "Category"
-    },
-
-    lessons: [{
-        type: Schema.Types.ObjectId,
-        ref: "Lesson"
-    }]
+    }
 }, { timestamps: true })
 
 module.exports = mongoose.model( 'Subject', subjectSchema )
