@@ -3,7 +3,7 @@ const app = express()
 const mongoose = require("mongoose")
 const bodyParser = require("body-parser")
 const favicon = require('express-favicon');
-require('dotenv').config()
+require('dotenv').config({path: "./.env"})
 
 app.use(favicon(__dirname + '/public/favicon.png'));
 // ROUTES
