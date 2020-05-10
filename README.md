@@ -1,7 +1,7 @@
 # START NG NODEJS TASK 4 - Tutoring App API Version 1
 
 ### For API testing;
-###### For testing with Postman onn routes marked as protected, you will have to copy the JWToken generated on login and add to your header as a header value. Header key: access-token
+###### For testing with Postman on routes marked as protected, you will have to copy the JWToken generated on login and add to your header as a header value. Header key: access-token
 
 #### Students
 ##### Signup
