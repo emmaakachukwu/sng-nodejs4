@@ -22,6 +22,7 @@ mongoose.connect("mongodb+srv://emmaakachukwu:782009ace@cluster0-v3dg0.mongodb.n
 );
 
 app.get('/', (req, res) => {
+    res.redirect('/api/v1')
     res.send('This is the home page')
 });
 
