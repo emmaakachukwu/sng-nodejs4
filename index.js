@@ -7,7 +7,6 @@ const favicon = require('express-favicon');
 
 app.use(favicon('./favicon.png'));
 
-app.set( 'port', ( process.env.PORT || 5000 ));
 // ROUTES
 const studentRoutes = require("./routes/students");
 const tutorRoutes = require("./routes/tutors");
@@ -16,7 +15,7 @@ const adminRoutes = require("./routes/admin");
 mongoose.connect("mongodb+srv://emmaakachukwu:782009ace@cluster0-v3dg0.mongodb.net/test?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true }).then(
     result => {
         console.log("Database connected");
-        app.get('port')
+        app.listen(process.env.PORT || 3000);
     }
 ).catch(
     err => console.log(err)
@@ -24,7 +23,7 @@ mongoose.connect("mongodb+srv://emmaakachukwu:782009ace@cluster0-v3dg0.mongodb.n
 
 app.get('/', (req, res) => {
     res.send('This is the home page')
-})
+});
 
 app.use(bodyParser.json())
 
