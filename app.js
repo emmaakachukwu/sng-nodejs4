@@ -11,7 +11,7 @@ const studentRoutes = require("./routes/students");
 const tutorRoutes = require("./routes/tutors");
 const adminRoutes = require("./routes/admin");
 
-mongoose.connect("", { useNewUrlParser: true, useUnifiedTopology: true }).then(
+mongoose.connect("mongodb+srv://emmaakachukwu:782009ace@cluster0-v3dg0.mongodb.net/test?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true }).then(
     result => {
         console.log("Database connected");
         app.listen(3000 || process.env.PORT);
