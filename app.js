@@ -14,7 +14,7 @@ const adminRoutes = require("./routes/admin");
 mongoose.connect("mongodb+srv://emmaakachukwu:782009ace@cluster0-v3dg0.mongodb.net/test?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true }).then(
     result => {
         console.log("Database connected");
-        app.listen(3000 || process.env.PORT);
+        app.listen(process.env.PORT || 4200);
     }
 ).catch(
     err => console.log(err)
