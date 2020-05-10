@@ -5,7 +5,7 @@ const bodyParser = require("body-parser")
 const favicon = require('express-favicon');
 // require('dotenv').config({path: "./.env"})
 
-// app.use(favicon(__dirname + '/public/favicon.png'));
+app.use(favicon('./favicon.png'));
 
 app.set( 'port', ( process.env.PORT || 5000 ));
 // ROUTES
