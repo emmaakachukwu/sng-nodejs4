@@ -26,7 +26,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/v1', (req, res) => {
-    res.redirect('/api/v1')
     res.send('This is the home page')
 });
 
