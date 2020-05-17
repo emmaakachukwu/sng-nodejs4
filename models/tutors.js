@@ -32,9 +32,11 @@ const userSchema = new Schema({
         default: false
     },
 
-    subjects: {
-        type: Array
-    }
+    subjects: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Subject'
+    }]
+
 }, { timestamps: true })
 
 module.exports = mongoose.model( 'Tutor', userSchema )

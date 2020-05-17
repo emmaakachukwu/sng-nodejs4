@@ -55,7 +55,7 @@ router.post('/signup', (req, res) => {
 })
 
 // LOGIN AS A TUTOR
-router.post('/login', (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     const email = req.body.email
     const password = req.body.password
 
@@ -67,29 +67,41 @@ router.post('/login', (req, res, next) => {
         return
     }
 
-    Tutor.findOne({email}).then(
-        user => {
-            if ( !user ) {
-                return res.status(404).send("Tutor not found, please provide valid credentials");
-            }
-
-            bcrypt.compare(password, user.password).then(
-                valid => {
-                    if ( !valid ) {
-                        return res.status(403).send("Incorrect password, please review details and try again")
-                    }
-                    const token = jwt.sign({
-                        email: user.email,
-                        _id: user._id
-                    }, "mysecretkey", { expiresIn: "1hr"});
-                    res.status(200).send({
-                        _id: user._id,
-                        token
-                    })
-                }
-            )
+    const findTutor = await Tutor.findOne({email})
+    try {
+        if ( !findTutor ) {
+            return res.status(404).send({
+                status: false,
+                message: "Tutor not found, please provide valid credentials"
+            });
         }
-    )
+    } catch ( err ) {
+        console.log(err)
+    }    
+
+    const checkPassword = await bcrypt.compare(password, findTutor.password)
+    try {
+        if ( !checkPassword ) {
+            return res.status(403).send({
+                status: false,
+                message: "Incorrect password, please review details and try again"
+            })
+        }
+    } catch ( err ) {
+        console.log(err)
+    }
+    
+    const token = jwt.sign({
+        email: findTutor.email,
+        _id: findTutor._id
+    }, "mysecretkey", { expiresIn: "1hr"});
+    res.cookie('access-token', token)
+    res.cookie('access-level', findTutor.access_level)
+    res.status(200).send({
+        _id: findTutor._id,        
+        token,
+        findTutor
+    })
 })
 
 /********** VERIFY JWTs **********/
@@ -122,21 +134,33 @@ const verifyjwt = function(token){
 
 // REGISTER TO TAKE A SUBJECT
 router.patch('/add-subject/:userId', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
+
     const id = req.params.userId
     if ( verify.status != false ) {
+        if ( user != 'tutor' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as a tutor. Please login again"
+            })
+        }
+
         const sub = new Tutor({
             subjects: req.body.subject,
         })
+        
+        const subject = req.body.subject
 
-        if ( !req.body.subject ) {
+        if ( !subject ) {
             res.status(400).send({
                 status: false,
                 message: "All fields are required"
             })
             return
         }
+        // return res.send(sub.subjects)
 
         try {
             const tutor = await Tutor.findOne({_id: id})
@@ -150,30 +174,49 @@ router.patch('/add-subject/:userId', async (req, res) => {
             console.log(err)
         }
         
-        Subject.findOne({name: sub.subjects}).then(
-            data => {
-                if ( !data ) {
-                    return res.status(423).send({
+        try {
+            const checkSubjects = await Subject.findOne({_id: subject})
+            const checkTutorSubjects = await Tutor.findOne({_id: id}).populate('subjects')
+
+            if ( !checkSubjects ) {
+                return res.status(423).send({
+                    status: false,
+                    message: "Subject is not available for tutoring"
+                })
+            } else {
+                checkTutorSubjects.subjects.forEach( async element => {
+                    try {
+                        if ( element._id == subject ) {
+                            return res.send({
+                                status: false,
+                                message: "Subject already registered under tutor"
+                            })
+                        }
+                    } catch ( err ) {
+                        console.log(err)
+                    }                    
+                });
+
+                if ( checkTutorSubjects.subjects.includes(subject) ) {
+                    return res.send({
                         status: false,
-                        message: "Subject is not available for tutoring"
+                        message: "Subject already registered under tutor"
                     })
                 }
-    
-                try {
-                    sub.updateOne(
-                        {_id: id},
-                        {$push: {subjects: [sub.subjects]}}
-                    )
-                } catch (err) {
-                    console.log(err)
-                }
-                
+
+                const updateSub = await Tutor.updateOne(
+                    {_id: id},
+                    {$push: {subjects: sub.subjects}}
+                )
                 res.status(200).send({
                     status: true,
                     message: "Subject created successfully"
                 })
             }
-        ).catch(err => console.log(err))
+        } catch ( err ) {
+            console.log(err)
+        }       
+        
     } else {
         res.send({
             verify
