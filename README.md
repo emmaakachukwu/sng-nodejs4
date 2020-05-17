@@ -1,7 +1,5 @@
 # START NG NODEJS TASK 4 - Tutoring App API Version 1
 
-### For API testing;
-###### For testing with Postman on routes marked as protected, you will have to copy the JWToken generated on login and add to your header as a header value. Header key: access-token
 
 #### Students
 ##### Signup
@@ -33,7 +31,7 @@
 
 ##### Register to tutor a subject (Protected)
 * method: PATCH
-* goto http://sng-nodejs4.herokuapp.com/api/v1/tutors/add-subject/<your_id>
+* goto http://sng-nodejs4.herokuapp.com/api/v1/tutors/add-subject/<tutor_id>
   * E.g. goto http://sng-nodejs4.herokuapp.com/api/v1/tutors/add-subject/5eb4a923d0f6792346ef911b
 * Field needed is subject tutor wishes to register as a tutor in. Subject must have been initially registered by admin as part of the available subjects
   * {"subject": "<subject_to_add>"}
