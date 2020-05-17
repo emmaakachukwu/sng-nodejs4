@@ -1,6 +1,5 @@
 # START NG NODEJS TASK 4 - Tutoring App API Version 1
 
-
 #### Students
 ##### Signup
 * method: POST
