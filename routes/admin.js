@@ -1,9 +1,12 @@
 const router = require("express").Router()
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
+
 const Admin = require("../models/tutors")
 const Subject = require("../models/subjects")
 const Category = require("../models/categories")
+const Lesson = require("../models/lessons")
+const Student = require("../models/students")
 
 // LOGIN AS AN ADMIN
 router.post('/login', (req, res) => {
@@ -29,10 +32,14 @@ router.post('/login', (req, res) => {
                     if ( !valid ) {
                         return res.status(403).send("Incorrect password, please review details and try again")
                     }
+
                     const token = jwt.sign({
                         email: user.email,
                         _id: user._id
-                    }, "mysecretkey", { expiresIn: "24hr"});
+                    }, "mysecretkey", { expiresIn: "1hr"})
+                    
+                    res.cookie('access-token', token)
+                    res.cookie('access-level', 'admin')
                     res.status(200).send({
                         _id: user._id,
                         token
@@ -72,9 +79,18 @@ const verifyjwt = function(token){
 
 // CREATE SUBJECT (ADMIN ONLY)
 router.post('/create-subject', (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+
     let verify = verifyjwt(token)
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         const subject = new Subject({
             name: req.body.name,
             category: req.body.category
@@ -117,7 +133,8 @@ router.post('/create-subject', (req, res) => {
 
 // UPDATE A SUBJECT IN A CATEGORY(BY ID)
 router.patch('/update-subject/:id', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const id = req.params.id
@@ -125,6 +142,13 @@ router.patch('/update-subject/:id', async (req, res) => {
     const category = req.body.category
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         if ( !name || !category ) {
             return res.status(400).send({
                 status: false,
@@ -152,7 +176,7 @@ router.patch('/update-subject/:id', async (req, res) => {
                     })
                 }
             }
-        )
+        ).catch(err => console.log(err))
     
         try {          
             const updateSubject = await Subject.updateOne(
@@ -176,12 +200,20 @@ router.patch('/update-subject/:id', async (req, res) => {
 
 // DELETE A SUBJECT IN A CATEGORY BY ID
 router.delete('/delete-subject/:id', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const id = req.params.id
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         try {
             const removedSubject = await Subject.remove({_id: id})
             res.status(200).send({
@@ -202,10 +234,18 @@ router.delete('/delete-subject/:id', async (req, res) => {
 
 // RETRIEVE ALL TUTORS
 router.get('/tutors', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         try {
             const tutors = await Admin.find({})
             res.status(200).send({
@@ -224,12 +264,20 @@ router.get('/tutors', async (req, res) => {
 
 // GET A TUTOR BY ID
 router.get('/tutors/:id', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const id = req.params.id
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         try {
             const tutor = await Admin.findOne({_id: id})
             res.status(200).send({
@@ -248,12 +296,20 @@ router.get('/tutors/:id', async (req, res) => {
 
 // DEACTIVATE A TUTOR BY ID
 router.patch('/tutors/:id', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const id = req.params.id
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         try {
             const tutor = await Admin.updateOne(
                 {_id: id},
@@ -277,7 +333,8 @@ router.patch('/tutors/:id', async (req, res) => {
 
 // ADD CATEGORIES
 router.post('/create-category', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const category = new Category({
@@ -285,6 +342,13 @@ router.post('/create-category', async (req, res) => {
     })
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         if ( !category.name ) {
             return res.status(400).send({
                 status: false,
@@ -317,7 +381,9 @@ router.post('/create-category', async (req, res) => {
 
 // GET CATEGORIES
 // router.get('/categories/:id', async (req, res) => {
-//     var token = req.headers['access-token']
+//     var cookies = req.headers.cookie.split(';')
+    // var token = cookies[0].split('=')[1]
+    // var user = cookies[1].split('=')[1]
 //     let verify = verifyjwt(token)
 
 //     const id = req.params.id
@@ -341,13 +407,21 @@ router.post('/create-category', async (req, res) => {
 
 // UPDATE CATEGORY
 router.patch('/update-category', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const name = req.body.name
     const new_name = req.body.new_name
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         if ( !name || !new_name ) {
             return res.send({
                 status: false,
@@ -384,12 +458,20 @@ router.patch('/update-category', async (req, res) => {
 
 // DELETE CATEGORY
 router.delete('/delete-category', async (req, res) => {
-    var token = req.headers['access-token']
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
     let verify = verifyjwt(token)
 
     const name = req.body.name
 
     if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
         if ( !name ) {
             return res.send({
                 status: false,
@@ -428,18 +510,254 @@ router.delete('/delete-category', async (req, res) => {
 /*********** LESSONS **********/
 
 // BOOK LESSONS
+router.post('/book-lesson', async (req, res) => {
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+    let verify = verifyjwt(token)
 
+    if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
+        const lesson = new Lesson({
+            subject: req.body.subject,
+            student: req.body.student,
+            tutor: req.body.tutor
+        })
+
+        if ( !lesson.subject || !lesson.student || !lesson.tutor ) {
+            return res.send({
+                status: false,
+                message: "All fields are required"
+            })
+        }
+
+        try {
+            const checkSubject = await Subject.findOne({_id: lesson.subject})
+            const checkStudent = await Student.findOne({_id: lesson.student})
+            const checkTutor = await Admin.findOne({_id: lesson.tutor})
+            const checkLesson = await Lesson.findOne({subject: lesson.subject, student: lesson.student, tutor: lesson.tutor})
+
+            if ( !checkSubject || !checkStudent || !checkTutor ) {
+                res.status(423).send({
+                    status: false,
+                    message: "An input is invalid. Check your inputs and try again"
+                })
+            } else if ( !checkTutor.subjects.includes(lesson.subject) ) {
+                res.send({
+                    status: false,
+                    message: "Tutor not registered to teach the subject"
+                })
+            } else if ( checkLesson ) {
+                res.send({
+                    status: false,
+                    message: "Lesson has been booked already"
+                })
+            } else {
+                const bookLesson = lesson.save()
+                res.status(200).send({
+                    status: true,
+                    message: "Lesson has been booked",
+                    bookLesson
+                })
+            }
+             
+        } catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
 
 // RETRIEVE LESSONS
+router.get('/lessons', async (req, res) => {
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+    let verify = verifyjwt(token)
 
+    if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
+        try {
+            const lessons = await Lesson.find({})
+            if ( lessons ) {
+                res.status(200).send({
+                    status: true,
+                    message: lessons
+                })
+            } else {
+                res.send({
+                    status: false,
+                    message: "No lesson booked yet"
+                })
+            }
+             
+        } catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
 
 // GET A LESSON BY ID
+router.get('/lessons/:id', async (req, res) => {
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+    const id = req.params.id
+    let verify = verifyjwt(token)
 
+    if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
+        try {
+            const lesson = await Lesson.findOne({_id: id})
+            if ( lesson ) {
+                res.status(200).send({
+                    status: true,
+                    message: lesson
+                })
+            } else {
+                res.send({
+                    status: false,
+                    message: "Lesson with ID: " + id + " not found"
+                })
+            }
+             
+        } catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
 
 // UPDATE A LESSON BY ID
+router.patch('/update-lesson/:id', async (req, res) => {
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+    let verify = verifyjwt(token)
 
+    const id = req.params.id
+    const subject = req.body.subject
+    const student = req.body.student
+    const tutor = req.body.tutor
+
+    if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
+        if ( !subject || !student || !tutor ) {
+            return res.status(400).send({
+                status: false,
+                message: "All fields are required"
+            })
+        }
+
+        const lesson = await Lesson.findOne({_id: id})
+        if ( !lesson ) {
+            return res.send({
+                status: false,
+                message: "Lesson with ID: " + id + " not found"
+            })
+        }
+    
+        try { 
+            const checkLesson = await Lesson.findOne({subject: subject, student: student, tutor: tutor})
+            
+            if ( checkLesson ) {
+                res.send({
+                    status: false,
+                    message: "Lesson has been booked already"
+                })
+            } else {
+                const updateLesson = await Lesson.updateOne(
+                    {_id: id},
+                    {$set: { subject: subject, student: student, tutor: tutor }}
+                )
+                res.status(200).send({
+                    status: true,
+                    message: "lesson updated successfully",
+                    updateLesson
+                })
+            }
+        }
+        catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
 
 // DELETE A LESSON BY ID
+router.delete('/delete-lesson/:id', async (req, res) => {
+    var token = req.cookies['access-token']
+    var user = req.cookies['access-level']
+    let verify = verifyjwt(token)
+
+    const id = req.params.id
+
+    if ( verify.status != false ) {
+        if ( user != 'admin' ) {
+            return res.send({
+                status: false,
+                message: "You are not logged in as an admin. Please login again"
+            })
+        }
+
+        const lesson = await Lesson.findOne({_id: id})
+        if ( !lesson ) {
+            return res.send({
+                status: false,
+                message: "Lesson with ID: " + id + " not found"
+            })
+        }
+    
+        try {
+            const deleteLesson = await Lesson.remove({_id: id})
+            res.status(200).send({
+                status: true,
+                message: "Lesson deleted successfully",
+                deleteLesson
+            })
+        }
+        catch( err ) {
+            console.log(err)
+        }
+    } else {
+        res.send({
+            verify
+        })
+    }
+})
 
 
 module.exports = router
